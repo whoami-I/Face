@@ -35,7 +35,7 @@ typedef unsigned int Color;
 
 #define LOG(msg...) __android_log_print(ANDROID_LOG_VERBOSE, "NativeFilters", msg)
 
-#define JNIFUNCF(cls, name, vars...) Java_com_example_face_algorithm_ ## cls ## _ ## name(JNIEnv* env, jobject obj, vars)
+#define JNIFUNCF(cls, name, vars...) Java_com_example_face_ ## cls ## _ ## name(JNIEnv* env, jobject obj, vars)
 
 #define RED i
 #define GREEN i+1
@@ -65,5 +65,5 @@ __inline__ int clampMax(int c,int max){
     return  c;
 }
 */
-
+cv::Mat normalizeMat(cv::Mat in, float scale);
 #endif // FILTERS_H
