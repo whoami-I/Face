@@ -1,8 +1,50 @@
 #include "opencv2/opencv.hpp"
 #include "detect.h"
+#include "inference.h"
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 
 using namespace cv;
-int min_face_size = 20;
+using namespace std;
+
+
+
+std::unique_ptr<InferenceContext> ctx;
+extern "C"
+void JNIFUNCF(Detector, nativeInit, jobject assetManager) {
+    if (ctx == NULL) {
+        ctx = std::unique_ptr<InferenceContext>(new InferenceContext());
+        AAssetManager *mgr = AAssetManager_fromJava(env, assetManager);
+        AAsset *pmodel_asset = AAssetManager_open(mgr, "pmodel.tflite",
+                                                  AASSET_MODE_STREAMING);
+        int64_t pmodel_buffer_length = AAsset_getLength(pmodel_asset);
+        char *pmodel_buffer = new char[pmodel_buffer_length];
+        AAsset_read(pmodel_asset, pmodel_buffer, pmodel_buffer_length);
+
+        AAsset *rmodel_asset = AAssetManager_open(mgr, "rmodel.tflite",
+                                                  AASSET_MODE_STREAMING);
+        int64_t rmodel_buffer_length = AAsset_getLength(rmodel_asset);
+        char *rmodel_buffer = new char[rmodel_buffer_length];
+        AAsset_read(rmodel_asset, rmodel_buffer, rmodel_buffer_length);
+
+        AAsset *omodel_asset = AAssetManager_open(mgr, "omodel.tflite",
+                                                  AASSET_MODE_STREAMING);
+        int64_t omodel_buffer_length = AAsset_getLength(omodel_asset);
+        char *omodel_buffer = new char[omodel_buffer_length];
+        AAsset_read(omodel_asset, omodel_buffer, omodel_buffer_length);
+
+        ctx->initModel(pmodel_buffer, pmodel_buffer_length, rmodel_buffer,
+                       rmodel_buffer_length, omodel_buffer, omodel_buffer_length);
+
+        AAsset_close(pmodel_asset);
+        AAsset_close(rmodel_asset);
+        AAsset_close(omodel_asset);
+        delete[]pmodel_buffer;
+        delete[]rmodel_buffer;
+        delete[]omodel_buffer;
+    }
+}
+
 
 extern "C"
 void JNIFUNCF(Detector, nativeDetectFace, jobject bitmap,
@@ -19,21 +61,8 @@ void JNIFUNCF(Detector, nativeDetectFace, jobject bitmap,
     cv::mixChannels(&img, 1, &im, 1, from_to, 3);
     cv::resize(img, im, cv::Size(400.0f * width / height, 400));
 
-    //begin pnet
-    int net_size = 12;
-    float scale_factor = 0.709;
-    float current_scale = (float) net_size / min_face_size;
 
-    cv::Mat norm_img = normalizeMat(im, current_scale);
-    int currentH = norm_img.rows;
-    int currentW = norm_img.cols;
-    while (MIN(currentH, currentW) > net_size) {
-        float *byte_buffer = 0;
-        env->NewDirectByteBuffer(&byte_buffer,
-                                 norm_img.rows * norm_img.cols * norm_img.depth());
 
-        free(byte_buffer);
-    }
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
