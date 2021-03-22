@@ -1,6 +1,7 @@
 package com.example.face
 
 import android.content.Context
+import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.util.Log
 import org.tensorflow.lite.Interpreter
@@ -49,6 +50,10 @@ class Detector {
             .order(ByteOrder.nativeOrder())
     }
 
+    init {
+        System.loadLibrary("filters")
+    }
+
     fun loadModel() {
         val gpuDelegate = GpuDelegate()
         val tfliteOptions =
@@ -95,23 +100,11 @@ class Detector {
         return index
     }
 
-    fun inferPModel(iin: ByteBuffer, out: ByteBuffer) {
-        pModel.run(iin, out)
-    }
-
-    fun inferRModel(iin: ByteBuffer, out: ByteBuffer) {
-        rModel.run(iin, out)
-    }
-
-    fun inferOModel(iin: ByteBuffer, out: ByteBuffer) {
-        oModel.run(iin, out)
-    }
-
     fun detectFace(bitmap: Bitmap) {
         nativeDetectFace(bitmap, bitmap.width, bitmap.height)
     }
-
-    external fun nativeDetectFace(bitmap: Bitmap, width: Int, height: Int);
+    external fun nativeInit(assetManager: AssetManager)
+    external fun nativeDetectFace(bitmap: Bitmap, width: Int, height: Int)
 
     /** Memory-map the model file in Assets.  */
     @Throws(IOException::class)

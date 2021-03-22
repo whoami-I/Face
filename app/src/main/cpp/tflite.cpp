@@ -15,9 +15,9 @@ void TfBackend::loadPmodel(const char *file_buffer, size_t size){
 
     pmodel_interpreter->SetNumThreads(num_threads);
     //VerifyShapes();
-    if (pmodel_interpreter->AllocateTensors() != kTfLiteOk) {
-        throw std::runtime_error("Could not allocate tensors");
-    }
+//    if (pmodel_interpreter->AllocateTensors() != kTfLiteOk) {
+//        throw std::runtime_error("Could not allocate tensors");
+//    }
 }
 
 void TfBackend::loadRmodel(const char *file_buffer, size_t size){

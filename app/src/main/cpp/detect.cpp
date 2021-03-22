@@ -7,9 +7,8 @@
 using namespace cv;
 using namespace std;
 
-
-
 std::unique_ptr<InferenceContext> ctx;
+
 extern "C"
 void JNIFUNCF(Detector, nativeInit, jobject assetManager) {
     if (ctx == NULL) {
@@ -56,11 +55,12 @@ void JNIFUNCF(Detector, nativeDetectFace, jobject bitmap,
         return;
     }
     cv::Mat img(height, width, CV_8UC4, destination);
-    cv::Mat im;
+    cv::Mat im(height, width, CV_8UC3);
     int from_to[] = {0, 2, 1, 1, 2, 0};
     cv::mixChannels(&img, 1, &im, 1, from_to, 3);
     cv::resize(img, im, cv::Size(400.0f * width / height, 400));
-
+    vector<ScoreBox> boxes;
+    ctx->detectNet(im, boxes);
 
 
     AndroidBitmap_unlockPixels(env, bitmap);
@@ -70,9 +70,12 @@ cv::Mat normalizeMat(cv::Mat in, float scale) {
     float h = in.rows * scale;
     float w = in.cols * scale;
     cv::Mat resizedImg;
-    cv::resize(in, resizedImg, cv::Size(h, w), 0, 0, cv::InterpolationFlags::INTER_LINEAR);
+    cv::resize(in, resizedImg, cv::Size(w, h), 0, 0, cv::InterpolationFlags::INTER_LINEAR);
     Mat norm_img;
     resizedImg.convertTo(norm_img, CV_32FC3);
+//    norm_img -= 127.5f;
+//    norm_img /= 128.0f;
+    norm_img = (norm_img - 127.5f) / 128;
     return norm_img;
 }
 
